@@ -7,11 +7,11 @@ const userSchema = new mongoose.Schema({
 
     name: {
         type: String,
-        // required: [true, "Please enter your name"],
+        required: [true, "Please enter your name"],
     },
     password: {
         type: String,
-        // required: [true, "Please enter password"],
+        required: [true, "Please enter password"],
         select: false,
 
     },
@@ -19,24 +19,27 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "User"
     },
-    likedbooks: {
+    likedbooks: [{
         type: Schema.Types.ObjectId,
         ref: books
-    },
-    favbooks: {
+    }],
+    favbooks: [{
         type: Schema.Types.ObjectId,
         ref: books
-    }
+    }]
 }
 )
 
 userSchema.pre("save", async function (next) {
-
     if (!this.isModified('password')) return next();
 
-    this.password = await bcrypt.hash(this.password,10);
-    next();
-
+    try {
+        this.password = await bcrypt.hash(this.password, 10);
+        next();
+    } catch (err) {
+        next(err);  
+    }
 });
+
 
 module.exports = mongoose.model("User", userSchema);

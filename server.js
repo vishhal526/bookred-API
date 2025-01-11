@@ -2,23 +2,16 @@ require("dotenv").config();
 const express = require("express");
 const path = require("path");
 const app = express();
-// const bcrypt = require("bcrypt");
 const cors = require("cors");
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-// const session = require("express-session");
-const connectDB = require("./db/connect");
-// const User = require("./models/users");
-const Book = require('./models/books');
-const Author = require('./models/authors');
 const bodyParser = require('body-parser');
 
 // -----------------Req Routes-----------------------
-const genre_routes = require("./routes/genreroutes");
-const author_routes = require("./routes/authorRoutes")
-const books_routes = require("./routes/bookroutes");
-const auth_routes = require('./routes/authroutes');
-const publisher_routes = require("./routes/publisher");
+const genre_Routes = require("./routes/genreRoute");
+const author_Routes = require("./routes/authorRoutes")
+const books_Routes = require("./routes/bookRoutes");
+const auth_Routes = require("./routes/authRoutes")
+const publisher_Routes = require("./routes/publisherRoutes");
+
 // -----------------Req Routes-----------------------
 
 app.use(cors());
@@ -83,11 +76,11 @@ app.use('/upload', express.static(path.join(__dirname, 'upload')));
 const port = process.env.Port || 3030;
 
 
-app.use("/auth", auth_routes);
-app.use("/book", books_routes);
-app.use("/genre", genre_routes);
-app.use("/author", author_routes);
-app.use("/publisher", publisher_routes);
+app.use("/auth", auth_Routes);
+app.use("/book", books_Routes);
+app.use("/genre", genre_Routes);
+app.use("/author", author_Routes);
+app.use("/publisher", publisher_Routes);
 
 app.get("/", (req, res) => {
     res.send("Hello");
