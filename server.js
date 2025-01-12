@@ -13,7 +13,6 @@ const auth_Routes = require("./routes/authRoutes")
 const publisher_Routes = require("./routes/publisherRoutes");
 
 // -----------------Req Routes-----------------------
-
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());

@@ -5,27 +5,6 @@ const mongoose = require('mongoose');
 const multer = require("multer");
 const path = require("path");
 
-// const getAllImg = async (req, res) => {  
-//   try {  
-//       let images = await Book.find();  
-
-//       images = images.map(image => {  
-//           if (image.image) {  
-//               // This assumes image.image gives a path starting with G: and uses \ as separator
-//               let imagePath = image.image.split("\\").pop();
-//               image.image = `${req.protocol}://${req.get('host')}/upload/${imagePath}`;
-//           }  
-//           return image;  
-//       });  
-
-//       res.status(200).json(images);  
-
-//   } catch (error) {  
-//       console.error(error);  
-//       res.status(500).json({ error: 'Internal Server Error' });  
-//   }  
-// };
-
 const getAllBooksweb = async (req, res) => {
   try {
 
