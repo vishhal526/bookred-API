@@ -16,9 +16,6 @@ const publisherSchema = new mongoose.Schema({
         type: Number, 
     },
     socialMedia: {
-        facebook: {
-            type: String, 
-        },
         twitter: {
             type: String, 
         },
