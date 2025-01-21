@@ -86,6 +86,24 @@ const unlikebook = async (req, res) => {
 
 };
 
+const getRandomBooks = async (req, res) => {
+    try {
+        // Use MongoDB's aggregation to randomly select 10 books
+        const randomBooks = await books.aggregate([
+            { $sample: { size: 10 } } // Randomly sample 10 documents
+        ]);
+
+        if (randomBooks.length === 0) {
+            return res.status(404).json({ message: "No books found" });
+        }
+
+        return res.status(200).json({ message: "Random books fetched successfully", data: randomBooks });
+    } catch (error) {
+        console.error("Error fetching random books:", error.message);
+        return res.status(500).json({ message: "An error occurred", error: error.message });
+    }
+};
+
 const unfavbook = async (req, res) => {
     const { userID, bookID } = req.body;
 
@@ -143,4 +161,4 @@ const getlikedbooks = async (req, res) => {
 };
 
 
-module.exports = { addToLikebook,  addToFavBooks, unlikebook, unfavbook, getlikedbooks, getfavbooks}
+module.exports = { addToLikebook,  addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, getfavbooks}
