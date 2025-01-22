@@ -68,18 +68,18 @@ const getPublisher = async (req, res) => {
         const { id } = req.params;
 
         if (id) {
-            // Retrieve a single author by ID
+            // Retrieve a single publisher by ID
             const publisher = await Publisher.findById(id);
 
             if (!publisher) {
-                return res.status(404).json({ message: 'Author not found' });
+                return res.status(404).json({ message: 'Publisher not found' });
             }
 
             return res.status(200).json(publisher);
         }
 
-        // Retrieve all authors
-        const publishers = await Publisher.find().populate('genre');
+        // Retrieve all publisher
+        const publishers = await Publisher.find();
         return res.status(200).json(publishers);
     } catch (error) {
         console.error("Error =", error);

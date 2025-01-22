@@ -40,4 +40,4 @@ const validateUser = (userData) => {
     };
 };
 
-model.exports = validateUser;
+module.exports = validateUser;

@@ -3,10 +3,11 @@ const express = require("express");
 const path = require("path");
 const app = express();
 const cors = require("cors");
+const connectDB = require('./db/connect');
 const bodyParser = require('body-parser');
 
 // -----------------Req Routes-----------------------
-const genre_Routes = require("./routes/genreRoute");
+const genre_Routes = require("./routes/genreRoutes");
 const author_Routes = require("./routes/authorRoutes")
 const books_Routes = require("./routes/bookRoutes");
 const auth_Routes = require("./routes/authRoutes")
