@@ -7,6 +7,12 @@ const authorSchema = new mongoose.Schema({
         required: true,
     },
 
+    actualName: {
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "Author",
+        default: null, 
+    },
+
     image: {
         type: String,
         required: true,

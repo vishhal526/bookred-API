@@ -9,7 +9,7 @@ const getAllBooksweb = async (req, res) => {
   try {
 
     let books = await Book.find()
-      .populate('author') 
+      .populate('author')
       .lean();
     books = books.map(book => {
       if (book.image) {
@@ -65,27 +65,52 @@ const upload = multer({ storage: storage })
 
 const addBook = async (req, res) => {
   try {
+    // Destructure the request body
+    const {
+      bookname,
+      image,
+      author,
+      publicationDate,
+      language,
+      series,
+      synopsis,
+      publisher,
+      genre,
+      pages,
+      isbn
+    } = req.body;
 
-    // Define allowed fields
-    const allowedFields = ['bookname', 'author', 'description'];
-    const filteredBody = {};
+    // Validate required fields
+    if (!bookname || !image || !author || !publisher || !genre || !synopsis || !pages || !isbn) {
+      return res.status(400).json({ message: 'All fields are required.' });
+    }
 
-    // Filter req.body to include only allowed fields
-    allowedFields.forEach((field) => {
-      if (req.body[field]) {
-        filteredBody[field] = req.body[field];
-      }
+    // Create a new book instance
+    const newBook = new Book({
+      bookname,
+      image,
+      author,
+      publicationDate: publicationDate ? new Date(publicationDate) : undefined,
+      language,
+      series,
+      synopsis,
+      publisher,
+      genre,
+      pages,
+      isbn
     });
 
-    // Add image and genre processing
-    filteredBody.image = req.file ? req.file.path : null;
-    filteredBody.genre = req.body.genre.split(',').map(id => new mongoose.Types.ObjectId(id.trim()));
+    // Save the book to the database
+    const savedBook = await newBook.save();
 
-    const newBook = await Book.create(filteredBody);
-    res.status(201).json({ newBook, message: 'Book Added successfully' });
+    // Respond with the saved book data
+    res.status(201).json({
+      message: 'Book added successfully',
+      book: savedBook
+    });
   } catch (error) {
-    console.error("Error = ", error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    console.error('Error adding book:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
@@ -105,8 +130,8 @@ const getBookapp = async (req, res) => {
     }
 
     // Retrieve all books
-    const books = await Book.find().populate('genre');
-    res.status(200).json(books);
+    const books = await Book.find();
+    return res.status(200).json(books);
   } catch (error) {
     console.error("Error = ", error);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -150,7 +175,7 @@ const getBooksByLike = async (req, res) => {
 //             return res.status(404).send("Book not found");
 //         }
 
-        
+
 //         await book.addRating(rating);
 
 //         return res.status(200).json({

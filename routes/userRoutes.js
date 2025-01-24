@@ -4,6 +4,8 @@ router = express.Router();
 
 router.get("/:id?",user);
 
+router.put("/updateName",userController.changeUsername);
+
 router.post("/likebook",userController.addToLikebook);
 
 router.post("/favbook",userController.addToFavBooks);

@@ -108,7 +108,7 @@ const unfavbook = async (req, res) => {
     const { userID, bookID } = req.body;
 
     try {
-        
+
         await User.findByIdAndUpdate(userID, {
             $pull: { favbooks: bookID }
         });
@@ -160,5 +160,44 @@ const getlikedbooks = async (req, res) => {
     }
 };
 
+const changeUsername = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { newName } = req.body;
 
-module.exports = { addToLikebook,  addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, getfavbooks}
+
+        if (!newName || typeof newName !== 'string' || newName.trim().length === 0) {
+            return res.status(400).json({ message: 'Invalid username. Please provide a valid name.' });
+        }
+
+
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { name: newName },
+            { new: true, runValidators: true }
+        );
+
+
+        if (!updatedUser) {
+            return res.status(404).json({ message: 'User not found.' });
+        }
+
+
+        res.status(200).json({
+            message: 'Username updated successfully',
+            user: {
+                id: updatedUser._id,
+                name: updatedUser.name,
+                role: updatedUser.role,
+                likedbooks: updatedUser.likedbooks,
+                favbooks: updatedUser.favbooks
+            }
+        });
+    } catch (error) {
+        console.error('Error updating username:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+
+module.exports = { addToLikebook, addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, changeUsername, getfavbooks }
