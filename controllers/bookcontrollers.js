@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 // const genre = require("../models/genre");
 const multer = require("multer");
 const path = require("path");
+const books = require('../models/books');
 
 const getAllBooksweb = async (req, res) => {
   try {
@@ -69,7 +70,7 @@ const addBook = async (req, res) => {
     const {
       bookname,
       image,
-      author,
+      writer, // Change 'author' to 'writer' to match the new structure
       publicationDate,
       language,
       series,
@@ -81,15 +82,27 @@ const addBook = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!bookname || !image || !author || !publisher || !genre || !synopsis || !pages || !isbn) {
+    if (!bookname || !image || !writer || !publisher || !genre || !synopsis || !pages || !isbn) {
       return res.status(400).json({ message: 'All fields are required.' });
+    }
+
+    // Validate writer structure
+    if (!Array.isArray(writer) || writer.length === 0) {
+      return res.status(400).json({ message: 'Writer must be a non-empty array.' });
+    }
+
+    // Ensure each writer entry has an author and role
+    for (const w of writer) {
+      if (!w.author || !w.role) {
+        return res.status(400).json({ message: 'Each writer entry must have an author ID and a role.' });
+      }
     }
 
     // Create a new book instance
     const newBook = new Book({
       bookname,
       image,
-      author,
+      writer, // Use the updated writer structure
       publicationDate: publicationDate ? new Date(publicationDate) : undefined,
       language,
       series,
@@ -114,49 +127,83 @@ const addBook = async (req, res) => {
   }
 };
 
-
 const getBookapp = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log("book id in controller =", id);
+
+    let books;
 
     if (id) {
-      const book = await Book.findById(id);
+      books = await Book.findById(id)
+        .populate({
+          path: 'writer.author', 
+          select: 'name role' 
+        })
+        .lean();
 
-      if (!book) {
+      if (!books) {
         return res.status(404).json({ message: 'Book not found' });
       }
 
-      return res.status(200).json(book);
+      const authors = Array.isArray(books.writer) ? books.writer.map(w => ({
+        name: w.author ? w.author.name : 'Unknown', 
+        role: w.role
+      })) : []; 
+
+      const response = {
+        ...books,
+        authors,
+      };
+
+      delete response.writer; 
+
+      return res.status(200).json(response);
     }
 
-    // Retrieve all books
-    const books = await Book.find().populate('author','name');
-    return res.status(200).json(books);
+    books = await Book.find()
+      .populate({
+        path: 'writer.author',
+        select: 'name role'
+      })
+      .lean();
+
+    const responseBooks = books.map(book => ({
+      ...book,
+      authors: Array.isArray(book.writer) ? book.writer.map(w => ({
+        name: w.author ? w.author.name : 'Unknown', 
+        role: w.role
+      })) : [],
+    }));
+
+    responseBooks.forEach(book => delete book.writer); 
+
+    return res.status(200).json(responseBooks);
   } catch (error) {
-    console.error("Error = ", error);
+    console.error("Error =", error); 
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
-const updateBook = async(req,res) =>{
+const updateBook = async (req, res) => {
   // const { id } = req.params; 
-  const { id, bookname, author, image } = req.body; 
+  const { id, bookname, author, image } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: 'Invalid book ID' });
   }
 
-  const updateFields = {}; 
+  const updateFields = {};
 
-  if (bookname) updateFields.bookname = bookname; 
-  if (author) updateFields.author = author; 
-  if (image) updateFields.image = image; 
+  if (bookname) updateFields.bookname = bookname;
+  if (author) updateFields.author = author;
+  if (image) updateFields.image = image;
 
   try {
     const updatedBook = await Book.findByIdAndUpdate(
       id,
-      { $set: updateFields }, 
-      { new: true } 
+      { $set: updateFields },
+      { new: true }
     );
 
     if (!updatedBook) {
@@ -166,7 +213,7 @@ const updateBook = async(req,res) =>{
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Something went wrong' });
-}
+  }
 }
 
 const getRandomBooks = async (req, res) => {

@@ -12,10 +12,18 @@ const booksSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    author: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Author",
-        required: true,
+    writer: [{
+        _id: false,
+        author: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Author', // Refers to the Author collection
+            required: true,
+        },
+        role: {  // Define role for author, translator, or any other contributor
+            type: String,
+            enum: ['Author', 'Translator'],  // Example roles
+            default: 'Author',
+        }
     }],
     rating: {
         average: {
