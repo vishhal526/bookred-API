@@ -120,7 +120,7 @@ const getBookapp = async (req, res) => {
     const { id } = req.params;
 
     if (id) {
-      const book = await Book.findById(id).populate('genre');
+      const book = await Book.findById(id);
 
       if (!book) {
         return res.status(404).json({ message: 'Book not found' });
@@ -130,7 +130,7 @@ const getBookapp = async (req, res) => {
     }
 
     // Retrieve all books
-    const books = await Book.find();
+    const books = await Book.find().populate('author','name');
     return res.status(200).json(books);
   } catch (error) {
     console.error("Error = ", error);
@@ -138,6 +138,71 @@ const getBookapp = async (req, res) => {
   }
 };
 
+const updateBook = async(req,res) =>{
+  // const { id } = req.params; 
+  const { id, bookname, author, image } = req.body; 
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: 'Invalid book ID' });
+  }
+
+  const updateFields = {}; 
+
+  if (bookname) updateFields.bookname = bookname; 
+  if (author) updateFields.author = author; 
+  if (image) updateFields.image = image; 
+
+  try {
+    const updatedBook = await Book.findByIdAndUpdate(
+      id,
+      { $set: updateFields }, 
+      { new: true } 
+    );
+
+    if (!updatedBook) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+    res.status(200).json(updatedBook);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Something went wrong' });
+}
+}
+
+const getRandomBooks = async (req, res) => {
+  try {
+    // Get a count of total books in the collection
+    const count = await Book.countDocuments();
+
+    // If there are fewer than 10 books, adjust the limit
+    const limit = Math.min(count, 10);
+
+    // Generate random indices
+    const randomIndices = new Set();
+    while (randomIndices.size < limit) {
+      randomIndices.add(Math.floor(Math.random() * count));
+    }
+
+    // Convert Set to Array and sort it
+    const indicesArray = Array.from(randomIndices).sort((a, b) => a - b);
+
+    // Fetch books based on the generated random indices
+    const randomBooks = await Promise.all(
+      indicesArray.map(index => Book.find().skip(index).limit(1))
+    );
+
+    // Flatten the array of arrays into a single array of books
+    const flattenedBooks = randomBooks.flat();
+
+    // Respond with the random books
+    res.status(200).json({
+      flattenedBooks
+    });
+  } catch (error) {
+    console.error('Error retrieving random books:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 const deleteBookById = async (req, res) => {
   try {
@@ -194,6 +259,8 @@ module.exports = {
   addBook,
   upload,
   deleteBookById,
+  getRandomBooks,
   getBooksByLike,
+  updateBook
   // addBookRating
-}; 
+}

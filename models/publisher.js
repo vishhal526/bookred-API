@@ -9,7 +9,7 @@ const publisherSchema = new mongoose.Schema({
     website: {
         type: String, 
     },
-    contactEmail: {
+    country: {
         type: String, 
     },
     establishedYear: {

@@ -90,7 +90,7 @@ const start = async () => {
 
     try {
         await connectDB(process.env.MONGODB_URL);
-        app.listen(port, () => {
+        app.listen(port,'0.0.0.0', () => {
             console.log(`${port} Connected`);
         })
     }

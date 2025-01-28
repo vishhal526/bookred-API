@@ -8,11 +8,13 @@ const commentcontrollers = require('../controllers/commentcontrollers');
 // router.get('/:bookid', booksController.getBookByIdweb);
 
 //Get Methods
-router.get('/app/:bookid?',booksController.getBookapp);
+router.get('/app/:bookId?',booksController.getBookapp);
 
 router.get('/like/:like', booksController.getBooksByLike);
 
 router.get('/:bookId/comments', commentcontrollers.getallComments);
+
+router.get('/recommend',booksController.getRandomBooks);
 
 //Post Methods
 router.post('/add', booksController.upload.single("image"), booksController.addBook);
@@ -20,7 +22,10 @@ router.post('/add', booksController.upload.single("image"), booksController.addB
 router.post('/:bookId/comments', commentcontrollers.addComment);
 
 //Delete Methods
-router.delete('/:bookid', booksController.deleteBookById);
+router.delete('/:bookId', booksController.deleteBookById);
+
+//Patch Method
+router.patch("/edit/:bookId",booksController.updateBook);
 
 module.exports = router;
 

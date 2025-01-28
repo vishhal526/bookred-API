@@ -19,6 +19,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "User"
     },
+    readbooks: [{
+        type: Schema.Types.ObjectId,
+        ref: books
+    }],
+    currentlyReading: {
+        type: Schema.Types.ObjectId,
+        ref: books
+    },
     likedbooks: [{
         type: Schema.Types.ObjectId,
         ref: books
@@ -37,7 +45,7 @@ userSchema.pre("save", async function (next) {
         this.password = await bcrypt.hash(this.password, 10);
         next();
     } catch (err) {
-        next(err);  
+        next(err);
     }
 });
 

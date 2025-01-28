@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 // const genre = require("./genre");
-// const author = require("./authors");
+const author = require("./authors");
 
 const booksSchema = new mongoose.Schema({
 

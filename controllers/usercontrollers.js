@@ -140,6 +140,26 @@ const getfavbooks = async (req, res) => {
     }
 };
 
+const getreadbooks = async (req, res) => {
+    const userID = req.params.userID;
+
+    try {
+
+        const user = await User.findById(userID);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const userBooks = await User.findById(userID).populate("readbooks");
+
+        return res.status(200).json(userBooks.readbooks);
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "An error occurred", error: error.message });
+    }
+};
+
 const getlikedbooks = async (req, res) => {
     const userID = req.params.userID;
 
@@ -200,4 +220,4 @@ const changeUsername = async (req, res) => {
 };
 
 
-module.exports = { addToLikebook, addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, changeUsername, getfavbooks }
+module.exports = { addToLikebook, getreadbooks, addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, changeUsername, getfavbooks }

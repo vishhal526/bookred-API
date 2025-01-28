@@ -10,6 +10,7 @@ const addPublisher = async (req, res) => {
             establishedYear,
             socialMedia,
             description,
+            country,
             logo,
         } = req.body;
 
@@ -27,6 +28,7 @@ const addPublisher = async (req, res) => {
             establishedYear,
             socialMedia,
             description,
+            country,
             logo,
         });
 
