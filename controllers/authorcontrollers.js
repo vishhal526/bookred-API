@@ -42,8 +42,6 @@ const deleteAuthor = async (req, res) => {
     try {
         const { id } = req.params;
 
-        console.log('Received ID:', id);
-
         const deleteauthor = await Author.findByIdAndDelete(id);
 
         if (!deleteauthor) {

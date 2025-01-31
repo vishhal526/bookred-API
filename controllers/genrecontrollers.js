@@ -57,19 +57,60 @@ const getBooksByGenre = async (req, res) => {
         }
 
         // Find books by genre
-        const books = await Book.find({ genre: genreId });
+        const books = await Book.find({ genre: genreId }).populate({
+            path: 'writer.author',
+            select: 'name role'
+        })
+            .lean();
 
+        const responseBooks = books.map(book => ({
+            ...book,
+            authors: Array.isArray(book.writer) ? book.writer.map(w => ({
+                name: w.author ? w.author.name : 'Unknown',
+                role: w.role
+            })) : [],
+        }));
         // Check if books are found
         if (books.length === 0) {
             return res.status(404).json({ message: "No books found for the specified genre." });
         }
+        responseBooks.forEach(book => delete book.writer);
 
-        // Return the books with a success message
-        res.status(200).json(books);
+        return res.status(200).json(responseBooks);
+
     } catch (error) {
         console.error("Error fetching books by genre:", error);
         res.status(500).json({ message: "An error occurred while fetching books by genre.", error: error.message });
     }
+};
+
+const getRandomGenre = async (req, res) => {    
+  try {
+    const count = await Genre.countDocuments();
+
+    const limit = Math.min(count, 10);
+
+    const randomIndices = new Set();
+    while (randomIndices.size < limit) {
+      randomIndices.add(Math.floor(Math.random() * count));
+    }
+
+    const indicesArray = Array.from(randomIndices).sort((a, b) => a - b);
+
+    const randomGenre = await Promise.all(
+      indicesArray.map(index => Genre.find().skip(index).limit(1))
+    );
+
+    const flattenedGenre = randomGenre.flat();
+
+    // Respond with the random books
+    res.status(200).json({
+      flattenedGenre
+    });
+  } catch (error) {
+    console.error('Error retrieving random Genre:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };
 
 const deleteGenre = async (req, res) => {
@@ -115,6 +156,7 @@ const getGenre = async (req, res) => {
 module.exports = {
     getGenre,
     addGenre,
+    getRandomGenre,
     deleteGenre,
     // getallGenre,
     getBooksByGenre

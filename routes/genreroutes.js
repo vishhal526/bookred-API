@@ -2,7 +2,7 @@ const genrecontrollers = require("../controllers/genrecontrollers");
 const express = require("express");
 const router = express.Router();
 
-// router.get("/",genrecontrollers.getallGenre);
+router.get("/random",genrecontrollers.getRandomGenre);
 
 router.get("/:id?", genrecontrollers.getGenre);
 

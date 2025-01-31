@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const multer = require("multer");
 const path = require("path");
 const books = require('../models/books');
+const transformBooks = require('../transformBooks');
+const { response } = require('express');
 
 const getAllBooksweb = async (req, res) => {
   try {
@@ -137,8 +139,8 @@ const getBookapp = async (req, res) => {
     if (id) {
       books = await Book.findById(id)
         .populate({
-          path: 'writer.author', 
-          select: 'name role' 
+          path: 'writer.author',
+          select: 'name role'
         })
         .lean();
 
@@ -147,16 +149,16 @@ const getBookapp = async (req, res) => {
       }
 
       const authors = Array.isArray(books.writer) ? books.writer.map(w => ({
-        name: w.author ? w.author.name : 'Unknown', 
+        name: w.author ? w.author.name : 'Unknown',
         role: w.role
-      })) : []; 
+      })) : [];
 
       const response = {
         ...books,
         authors,
       };
 
-      delete response.writer; 
+      delete response.writer;
 
       return res.status(200).json(response);
     }
@@ -168,19 +170,13 @@ const getBookapp = async (req, res) => {
       })
       .lean();
 
-    const responseBooks = books.map(book => ({
-      ...book,
-      authors: Array.isArray(book.writer) ? book.writer.map(w => ({
-        name: w.author ? w.author.name : 'Unknown', 
-        role: w.role
-      })) : [],
-    }));
+    const responseBooks = transformBooks(books);
 
-    responseBooks.forEach(book => delete book.writer); 
+    responseBooks.forEach(book => delete book.writer);
 
     return res.status(200).json(responseBooks);
   } catch (error) {
-    console.error("Error =", error); 
+    console.error("Error =", error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -218,33 +214,21 @@ const updateBook = async (req, res) => {
 
 const getRandomBooks = async (req, res) => {
   try {
-    // Get a count of total books in the collection
     const count = await Book.countDocuments();
-
-    // If there are fewer than 10 books, adjust the limit
     const limit = Math.min(count, 10);
 
-    // Generate random indices
-    const randomIndices = new Set();
-    while (randomIndices.size < limit) {
-      randomIndices.add(Math.floor(Math.random() * count));
-    }
+    const randomBooks = await Book.aggregate([
+      { $sample: { size: limit } },
+    ]);
 
-    // Convert Set to Array and sort it
-    const indicesArray = Array.from(randomIndices).sort((a, b) => a - b);
-
-    // Fetch books based on the generated random indices
-    const randomBooks = await Promise.all(
-      indicesArray.map(index => Book.find().skip(index).limit(1))
-    );
-
-    // Flatten the array of arrays into a single array of books
-    const flattenedBooks = randomBooks.flat();
-
-    // Respond with the random books
-    res.status(200).json({
-      flattenedBooks
+    const populatedBooks = await Book.populate(randomBooks, {
+      path: 'writer.author',
+      select: 'name role'
     });
+
+    responseBooks = transformBooks(populatedBooks);
+
+    res.status(200).json(responseBooks);
   } catch (error) {
     console.error('Error retrieving random books:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
