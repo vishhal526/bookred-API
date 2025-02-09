@@ -6,6 +6,10 @@ router.get("/random",genrecontrollers.getRandomGenre);
 
 router.get("/:id?", genrecontrollers.getGenre);
 
+router.patch('/edit/:id', genrecontrollers.editGenreApp);
+
+router.put('/edit/:id', genrecontrollers.editGenreApp);
+
 router.get('/book/:genreId', genrecontrollers.getBooksByGenre);
 
 router.post("/add", genrecontrollers.addGenre);

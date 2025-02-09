@@ -182,8 +182,8 @@ const getBookapp = async (req, res) => {
 };
 
 const updateBook = async (req, res) => {
-  // const { id } = req.params; 
-  const { id, bookname, author, image } = req.body;
+  const { id } = req.params; 
+  const { bookname, author, image } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ message: 'Invalid book ID' });
@@ -221,12 +221,13 @@ const getRandomBooks = async (req, res) => {
       { $sample: { size: limit } },
     ]);
 
+    // Correct way to populate
     const populatedBooks = await Book.populate(randomBooks, {
-      path: 'writer.author',
-      select: 'name role'
+      path: 'writer.author',  // Specify the field you want to populate
+      select: 'name role',     // Fields to include in the populated data
     });
 
-    responseBooks = transformBooks(populatedBooks);
+    const responseBooks = transformBooks(populatedBooks);
 
     res.status(200).json(responseBooks);
   } catch (error) {

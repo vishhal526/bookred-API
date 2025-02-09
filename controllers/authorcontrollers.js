@@ -149,6 +149,40 @@ const getAuthorapp = async (req, res) => {
     }
 };
 
+const editAuthorApp = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const { name, about, follower, facebook, twitter, instagram, linkedin, birthdate, image } = req.body;
+
+        // Find the author by ID
+        const author = await Author.findById(id);
+        if (!author) {
+            return res.status(404).json({ error: "Author not found" });
+        }
+
+        author.name = name || author.name;
+        author.about = about || author.about;
+        author.image = image || author.image;
+        author.follower = follower !== undefined ? follower : author.follower;
+        author.birthdate = birthdate || author.birthdate;
+
+        author.socialMedia = {
+            facebook: facebook || author.socialMedia.facebook,
+            twitter: twitter || author.socialMedia.twitter,
+            instagram: instagram || author.socialMedia.instagram,
+            linkedin: linkedin || author.socialMedia.linkedin,
+        };
+
+        // Save the updated author
+        const updatedAuthor = await author.save();
+
+        res.status(200).json({ message: "Author updated successfully", author: updatedAuthor });
+    } catch (error) {
+        console.error("Error =", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
+
 const getAuthorbyid = async (req, res) => {
 
     try {
@@ -169,6 +203,6 @@ const getAuthorbyid = async (req, res) => {
 
 }
 
-module.exports = { addAuthor, addAuthorApp, getAuthorapp, upload, getAllAuthor, deleteAuthor, getAuthorbyid, getBooksByAuthor };
+module.exports = { addAuthor, addAuthorApp, editAuthorApp, getAuthorapp, upload, getAllAuthor, deleteAuthor, getAuthorbyid, getBooksByAuthor };
 
 

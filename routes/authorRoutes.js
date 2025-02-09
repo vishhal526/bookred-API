@@ -12,6 +12,8 @@ router.get("/app/:authorid?",authorcontrollers.getAuthorapp)
 
 router.post("/add" ,authorcontrollers.addAuthorApp);
 
+router.patch("/edit/:id",authorcontrollers.editAuthorApp);
+
 router.delete("/delete/:id",authorcontrollers.deleteAuthor);
 
 module.exports = router;

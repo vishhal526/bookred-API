@@ -84,33 +84,54 @@ const getBooksByGenre = async (req, res) => {
     }
 };
 
-const getRandomGenre = async (req, res) => {    
-  try {
-    const count = await Genre.countDocuments();
+const getRandomGenre = async (req, res) => {
+    try {
+        const count = await Genre.countDocuments();
 
-    const limit = Math.min(count, 10);
+        const limit = Math.min(count, 10);
 
-    const randomIndices = new Set();
-    while (randomIndices.size < limit) {
-      randomIndices.add(Math.floor(Math.random() * count));
+        const randomIndices = new Set();
+        while (randomIndices.size < limit) {
+            randomIndices.add(Math.floor(Math.random() * count));
+        }
+
+        const indicesArray = Array.from(randomIndices).sort((a, b) => a - b);
+
+        const randomGenre = await Promise.all(
+            indicesArray.map(index => Genre.find().skip(index).limit(1))
+        );
+
+        const flattenedGenre = randomGenre.flat();
+
+        // Respond with the random books
+        res.status(200).json(flattenedGenre);
+    } catch (error) {
+        console.error('Error retrieving random Genre:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
+};
 
-    const indicesArray = Array.from(randomIndices).sort((a, b) => a - b);
+const editGenreApp = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const { name } = req.body;
 
-    const randomGenre = await Promise.all(
-      indicesArray.map(index => Genre.find().skip(index).limit(1))
-    );
+        // Find the genre by ID
+        const genre = await Genre.findById(id);
+        if (!genre) {
+            return res.status(404).json({ error: "Genre not found" });
+        }
 
-    const flattenedGenre = randomGenre.flat();
+        genre.name = name || genre.name;
 
-    // Respond with the random books
-    res.status(200).json({
-      flattenedGenre
-    });
-  } catch (error) {
-    console.error('Error retrieving random Genre:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
+        // Save the updated genre
+        const updatedGenre = await genre.save();
+
+        res.status(200).json({ message: "Genre updated successfully", genre: updatedGenre });
+    } catch (error) {
+        console.error("Error =", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
 };
 
 const deleteGenre = async (req, res) => {
@@ -156,6 +177,7 @@ const getGenre = async (req, res) => {
 module.exports = {
     getGenre,
     addGenre,
+    editGenreApp,
     getRandomGenre,
     deleteGenre,
     // getallGenre,
