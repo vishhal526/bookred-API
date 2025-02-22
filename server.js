@@ -16,7 +16,8 @@ const publisher_Routes = require("./routes/publisherRoutes");
 // -----------------Req Routes-----------------------
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.json());
+app.use(express.json()); 
+app.use(express.urlencoded({ extended: true }));    
 app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 // passport.use(new LocalStrategy(

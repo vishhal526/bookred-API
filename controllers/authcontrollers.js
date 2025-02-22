@@ -2,64 +2,206 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/users');
 const validateUser = require('../validation/userValidation');
+const crypto = require('crypto');
+// const user = require('../models/users');
 
 const saltRounds = 10;
 
-// sign function
-const signinuser = async (req, res) => {
+const algorithm = 'aes-256-cbc'; // Ensure this matches what is used on the frontend
+const secretKey = process.env.SECRET_KEY; // Ensure this is a 32-byte key for AES-256
+
+const decryptPassword = (encryptedPassword, encryptedIV) => {
   try {
+    // Convert base64-encoded IV back to buffer
+    const ivBuffer = Buffer.from(encryptedIV, 'base64');
+    
+    // Clean and decode the encrypted password
+    const cleaned = encryptedPassword.replace(/-/g, '+').replace(/_/g, '/');
+    const encryptedBuffer = Buffer.from(cleaned, 'base64');
 
-    const validation = validateUser(req.body);
-    if (!validation.isValid) {
+    // Create decipher with correct key and IV
+    const decipher = crypto.createDecipheriv(algorithm, Buffer.from(secretKey, 'utf-8'), ivBuffer);
+    
+    const decrypted = Buffer.concat([
+      decipher.update(encryptedBuffer),
+      decipher.final()
+    ]);
+    
+    return decrypted.toString('utf-8');
+  } catch (err) {
+    console.error('Decryption error:', err.message);
+    throw new Error('Invalid encrypted password.');
+  }
+};
 
-      return res.status(400).json({ message: validation.message });
+const resetPassword = async (req, res) => {
+  try {
+    const { email, encryptedPassword, encryptedIV } = req.body;
 
+    console.log("Request Body (reset password) =", req.body);
+
+    if (!email || !encryptedPassword || !encryptedIV) {
+      console.log("Didn't get required data");
+      return res.status(400).json({ message: "Missing required fields" });
     }
 
-    const { name, password, role } = req.body;
-
-    if (!name || typeof name !== 'string' || !password || typeof password !== 'string') {
-
-      return res.status(400).json({ message: 'Name and password are required and must be strings' });
-
+    let decryptedPassword;
+    
+    try {
+      decryptedPassword = decryptPassword(encryptedPassword, encryptedIV);
+    } catch (err) {
+      return res.status(400).json({ message: "Password reset failed" });
     }
 
-    const existingUser = await User.findOne({ name });
-
-    if (existingUser) {
-
-      return res.status(400).json({ message: 'User already exists' });
-
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(400).json({ message: "Password reset failed" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    // Hash the password before saving (assuming you have a hash function)
+    user.password =  decryptedPassword;
+    
+    await user.save();
 
-    const userRole = role || "User";
-    const newUser = new User({ name, password: hashedPassword, role: userRole });
-    await newUser.save();
-    const token = jwt.sign({ id: newUser._id, name: newUser.name, role: newUser.role }, process.env.SECRET_STR, { expiresIn: "30d" });
-
-    res.status(201).json({
-
-      status: "success",
-      token,
-      data: newUser,
-      message: 'User registered successfully'
-
-    });
+    res.status(200).json({ message: "Password updated successfully" });
   } catch (error) {
+    console.error('Error in resetPassword:', error);
+    res.status(500).json({ message: "An error occurred" });
+  }
+};
 
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+
+// sign function
+// const signinuser = async (req, res) => {
+//   try {
+
+//     const validation = validateUser(req.body);
+//     if (!validation.isValid) {
+
+//       return res.status(400).json({ message: validation.message });
+
+//     }
+
+//     const { name, password, role } = req.body;
+
+//     if (!name || typeof name !== 'string' || !password || typeof password !== 'string') {
+
+//       return res.status(400).json({ message: 'Name and password are required and must be strings' });
+
+//     }
+
+//     const existingUser = await User.findOne({ name });
+
+//     if (existingUser) {
+
+//       return res.status(400).json({ message: 'User already exists' });
+
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+//     const userRole = role || "User";
+//     const newUser = new User({ name, password: hashedPassword, role: userRole });
+//     await newUser.save();
+//     const token = jwt.sign({ id: newUser._id, name: newUser.name, role: newUser.role }, process.env.SECRET_STR, { expiresIn: "30d" });
+
+//     res.status(201).json({
+
+//       status: "success",
+//       token,
+//       data: newUser,
+//       message: 'User registered successfully'
+
+//     });
+//   } catch (error) {
+
+//     res.status(500).json({ message: 'Internal Server Error', error: error.message });
+//   }
+// };
+
+//checkUsers
+
+const checkUserExists = async (req, res) => {
+  const { username, email, phoneNumber } = req.body;
+
+  try {
+    let query = null;
+    if (username) query = { username };
+    else if (email) query = { email };
+    else if (phoneNumber) query = { phoneNumber };
+
+    if (!query) {
+      return res.status(400).json({ success: false, message: "No valid field provided" });
+    }
+
+    const user = await User.findOne(query).select("_id");
+    res.status(200).json({ exists: user ? 1 : 0 });
+
+  } catch (error) {
+    console.log("Error =", error.message);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+//sign function
+// const bcrypt = require('bcrypt');
+
+const signinuser = async (req, res) => {
+  console.log("Sign in Request Body = ", req.body);
+  const validation = validateUser(req.body);
+  if (!validation.isValid) {
+    return res.status(400).json({ message: validation.message });
+  }
+
+  const { email, phone, name, username, password } = req.body;
+  console.log("Received Body:", req.body);
+
+  try {
+    if (!email && !phone) {
+      return res.status(400).json({ success: false, message: "Email or phone number is required" });
+    }
+
+    // Check if the username already exists
+    let existingUser = await User.findOne({ username });
+    if (existingUser) {
+      return res.status(400).json({ success: false, message: "Username already taken" });
+    }
+
+    // Hash the password before saving it
+    // const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create a new user
+    const user = new User({
+      name,
+      username,
+      email: email || null,
+      phone: phone || null,
+      password: password, // Store the hashed password
+    });
+
+    // Save the new user
+    await user.save();
+
+    res.status(201).json({ success: true, message: "User registered successfully" });
+  } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0]; // Get the duplicate field
+      return res.status(400).json({ success: false, message: `${field} already registered` });
+    }
+
+    res.status(500).json({ success: false, message: error.message });
+    console.log("Error Message = ", error.message);
   }
 };
 
 // login function
 const loginUser = async (req, res) => {
   try {
-    const validation = validateUser(req.body);
-    if (!validation.isValid) {
-      return res.status(400).json({ message: validation.message });
-    }
+    // const validation = validateUser(req.body);
+    // if (!validation.isValid) {
+    //   return res.status(400).json({ message: validation.message });
+    // }
 
     const { loginId, password } = req.body; // loginId can be username, email, or phoneNumber
 
@@ -71,14 +213,18 @@ const loginUser = async (req, res) => {
         { phoneNumber: loginId }
       ]
     }).select('+password'); // Include password field explicitly
-
+    console.log("User Password = ", user.password);
     if (!user) {
+      console.log("No User Found")
       return res.status(401).json({ message: 'Invalid login credentials.' });
     }
 
     // Check if the password matches
     const passwordMatch = await bcrypt.compare(password, user.password);
+    hashedpassword = await bcrypt.hash(password, 10);
+    console.log("Sent Password when Hashed = ", hashedpassword);
     if (!passwordMatch) {
+      console.log("Password Incorrect");
       return res.status(401).json({ message: 'Invalid login credentials.' });
     }
 
@@ -96,7 +242,83 @@ const loginUser = async (req, res) => {
   }
 };
 
+//forgot Password
+const forgotPassword = async (req, res) => {
+  const { email, phoneNumber } = req.body;
+
+  try {
+
+    const user = await User.findOne({
+      $or: [{ email }, { phoneNumber }]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found with provided email or phone number" });
+    }
+
+    const resetCode = user.getResetPasswordCode();
+
+    await user.save(); // Save user with updated resetPasswordToken and resetPasswordExpire
+
+    // If email is provided, send the reset code via email
+    if (email) {
+      const emailOptions = {
+        to: user.email,
+        subject: "Password Reset Code",
+        text: `Your password reset code is: ${resetCode}. This code will expire in 15 minutes.`
+      };
+
+      await sendEmail(emailOptions);
+    }
+
+    // If phone number is provided, handle sending the reset code via WhatsApp/SMS API
+    if (phoneNumber) {
+      // Integrate your preferred SMS/WhatsApp API here
+      console.log(`Code ${resetCode} would be sent to ${phoneNumber}`);
+      // Example: sendSMS(phoneNumber, `Your password reset code is: ${resetCode}`);
+    }
+
+    res.status(200).json({ message: "Password reset code sent successfully" });
+  } catch (error) {
+    console.error("Error in forgotPassword:", error.message);
+    res.status(500).json({ message: "Something went wrong. Please try again later." });
+  }
+};
+
+//reset Password
+// const resetPassword = async (req, res) => {
+//   try {
+//     const { token } = req.params;
+//     const { password } = req.body;
+
+//     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+//     const user = await User.findOne({
+//       resetPasswordToken: hashedToken,
+//       resetPasswordExpire: { $gt: Date.now() },
+//     });
+
+//     if (!user) {
+//       return res.status(400).json({ message: 'Token is invalid or has expired.' });
+//     }
+
+//     user.password = password;
+//     user.resetPasswordToken = undefined;
+//     user.resetPasswordExpire = undefined;
+
+//     await user.save();
+
+//     res.status(200).json({ message: 'Password updated successfully.' });
+//   } catch (error) {
+//     console.error(error);
+
+//     res.status(500).json({ message: 'Something went wrong.', error: error.message });
+//   }
+// };
 
 
-module.exports = { signinuser, loginUser, }
+
+module.exports = {
+  signinuser, loginUser, forgotPassword, checkUserExists, resetPassword
+}
 

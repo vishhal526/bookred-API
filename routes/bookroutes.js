@@ -10,9 +10,6 @@ const commentcontrollers = require('../controllers/commentcontrollers');
 //Get Methods
 router.get('/app/:id?', booksController.getBookapp);
 
-
-router.get('/like/:like', booksController.getBooksByLike);
-
 router.get('/comments/:id', commentcontrollers.getallComments);
 
 router.get('/recommend', booksController.getRandomBooks);
@@ -29,6 +26,10 @@ router.delete('/:id', booksController.deleteBookById);
 
 //Patch Method
 router.patch("/edit/:id", booksController.updateBook);
+
+router.patch('/like/:id', booksController.likeBook);
+
+router.patch('/dislike/:id', booksController.dislikeBook);
 
 module.exports = router;
 

@@ -86,6 +86,58 @@ const unlikebook = async (req, res) => {
 
 };
 
+const addToDisLikebook = async (req, res) => {
+    const { userID, bookID } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(userID) || !mongoose.Types.ObjectId.isValid(bookID)) {
+        return res.status(400).json({ message: "Invalid userID or bookID format" });
+    }
+
+    try {
+
+        const user = await User.findById(userID);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (user.dislikedbooks.includes(bookID)) {
+            return res.status(400).json({ message: "Book already liked" });
+        }
+
+        await User.findByIdAndUpdate(userID, {
+            $addToSet: { likedbooks: bookID }
+        });
+
+        return res.status(200).json({ message: "Book liked successfully" });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: "An error occurred", error: error.message });
+    }
+};
+
+const removeDislikebook = async (req, res) => {
+
+    const { userID, bookID } = req.body;
+
+    try {
+
+        await User.findByIdAndUpdate(userID, {
+
+            $pull: { dislikedbooks: bookID }
+
+        });
+
+        return res.status(200).json({ message: "Book unliked successfully" })
+
+    } catch (error) {
+
+        return res.status(500).json({ message: "An Error Occured :", error: error })
+
+    }
+
+};
+
 const getRandomBooks = async (req, res) => {
     try {
         // Use MongoDB's aggregation to randomly select 10 books
@@ -220,4 +272,4 @@ const changeUsername = async (req, res) => {
 };
 
 
-module.exports = { addToLikebook, getreadbooks, addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, changeUsername, getfavbooks }
+module.exports = { addToLikebook, getreadbooks, addToFavBooks, getRandomBooks, unlikebook, unfavbook, getlikedbooks, changeUsername, getfavbooks, addToDisLikebook, removeDislikebook}

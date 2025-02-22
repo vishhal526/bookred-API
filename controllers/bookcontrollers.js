@@ -263,6 +263,44 @@ const getBooksByLike = async (req, res) => {
   }
 };
 
+const likeBook = async (req, res) => {
+
+  const bookId = req.params.id;
+  const Liked = req.params.isLiked;
+
+  const book = await Book.findById(bookId);
+
+  if (!book) return res.status(404).send('Book not found');
+
+  if (Liked) {
+    book.like += 1;
+  } else {
+    book.like = book.like > 0 ? book.like - 1 : 0; 
+  }
+
+  await book.save();
+  res.json({ like: book.like });
+}
+
+const dislikeBook = async (req, res) => {
+
+  const bookId = req.params.id;
+  const isdisLiked = req.params.isdisLiked;
+
+  const book = await Book.findById(bookId);
+
+  if (!book) return res.status(404).send('Book not found');
+
+  if (isdisLiked) {
+    book.dislike += 1;
+  } else {
+    book.dislike = book.dislike > 0 ? book.dislike - 1 : 0; 
+  }
+
+  await book.save();
+  res.json({ like: book.dislike });
+}
+
 // const addBookRating = async (req, res) => {
 //     try {
 //         const { bookId, rating } = req.body;  // Assuming bookId and rating come from the request body
@@ -290,6 +328,8 @@ module.exports = {
   getBookapp,
   addBook,
   upload,
+  likeBook,
+  dislikeBook,
   deleteBookById,
   getRandomBooks,
   getBooksByLike,

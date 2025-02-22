@@ -16,6 +16,7 @@ const userSchema = new mongoose.Schema({
     email: {
         type: String,
         required: [true, "Please enter your email"],
+        sparse: true,
         unique: true, 
         match: [
             /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
@@ -63,6 +64,12 @@ const userSchema = new mongoose.Schema({
             ref: "books",
         },
     ],
+    dislikedbooks: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "books",
+        },
+    ],
     favbooks: [
         {
             type: Schema.Types.ObjectId,
@@ -72,18 +79,20 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.methods.getResetPasswordCode = function () {
-
-    const resetCode = Math.floor(100000 + Math.random() * 900000).toString(); 
-
-    this.resetPasswordToken = crypto
-        .createHash("sha256")
-        .update(resetCode)
-        .digest("hex");
-
-    this.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
-
+    const resetCode = crypto.randomInt(100000, 999999).toString(); // 6-digit random code
+  
+    this.resetPasswordCode = resetCode;
+    this.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // Code valid for 10 minutes
+  
     return resetCode;
-};
+  };
+
+userSchema.pre("validate", function (next) {
+    if (!this.email && !this.phoneNumber) {
+        return next(new Error("Either email or phone number is required"));
+    }
+    next();
+});
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified('password')) return next();
@@ -95,6 +104,10 @@ userSchema.pre("save", async function (next) {
         next(err);
     }
 });
+
+userSchema.index({ username: 1 }, { unique: true });
+userSchema.index({ email: 1 }, { unique: true, sparse: true });
+userSchema.index({ phoneNumber: 1 }, { unique: true, sparse: true });
 
 
 module.exports = mongoose.model("User", userSchema);
